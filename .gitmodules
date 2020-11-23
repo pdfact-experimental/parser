@@ -1,6 +1,3 @@
 [submodule "models"]
 	path = models
 	url = https://github.com/pdfact-experimental/models
-[submodule "lib/models"]
-	path = lib/models
-	url = https://github.com/pdfact-experimental/models
