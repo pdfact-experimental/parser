@@ -3,12 +3,118 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>pdfact</groupId>
-  <artifactId>parser-parent</artifactId>
+  <artifactId>parser</artifactId>
   <version>0.1</version>
-  <packaging>pom</packaging>
 
-  <modules>
-    <module>lib/models</module>
-    <module>./pom_src.xml</module>
-  </modules>
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.localRepository>${project.build.directory}/mvn-repo</project.build.localRepository>
+
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <!-- The id of the server to use on authenticating against the Github server. This id must
+      correspond to a respective <server>-entry in your ~/.m2/settings.xml that specifies the
+      credentials to use on authenticating. -->
+    <github.global.server>github</github.global.server>
+    <!-- The branch to which the artifacts should be uploaded. -->
+    <github.site.branch>refs/heads/mvn-repo</github.site.branch>
+    <!-- The commit message to use on committing the artifacts. -->
+    <github.site.message>Maven artifacts for ${project.version}</github.site.message>
+    <!-- The Github account name owning the repository to which the artifacts should be uploaded -->
+    <github.site.repositoryOwner>pdfact-experimental</github.site.repositoryOwner>
+    <!-- The name of the repository to which the artifacts should be uploaded. -->
+    <github.site.repositoryName>${project.artifactId}</github.site.repositoryName>
+  </properties>
+
+  <!-- Deploy the artifacts to a temp. staging repository before uploading to the Github repo. -->
+  <distributionManagement>
+    <repository>
+      <id>repo</id>
+      <name>Temporary Staging Repository</name>
+      <url>file://${project.build.localRepository}</url>
+    </repository>
+  </distributionManagement>
+
+  <repositories>
+    <repository>
+      <id>pdfact-models</id>
+      <url>https://github.com/pdfact-experimental/models/raw/mvn-repo/</url>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <dependency>
+      <groupId>pdfact</groupId>
+      <artifactId>models</artifactId>
+      <version>0.1</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Configure the assembly plugin to create an executable jar-file with
+      all dependencies -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.3.0</version>
+        <executions>
+          <execution>
+            <id>build-cli</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <archive>
+                <manifest>
+                  <mainClass>pdfact.PdfParserMain</mainClass>
+                </manifest>
+                <manifestEntries>
+                  <Multi-Release>true</Multi-Release>
+                </manifestEntries>
+              </archive>
+              <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+              </descriptorRefs>
+              <attach>false</attach>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Deploy the artifacts to a temp. staging repository before uploading to the Github repo. -->
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>2.8.2</version>
+        <configuration>
+          <altDeploymentRepository>
+            repo::default::file://${project.build.localRepository}
+          </altDeploymentRepository>
+        </configuration>
+      </plugin>
+
+      <!-- Upload the artifacts to the Github repository. -->
+      <plugin>
+        <groupId>com.github.github</groupId>
+        <artifactId>site-maven-plugin</artifactId>
+        <version>0.11</version>
+        <configuration>
+          <branch>${github.site.branch}</branch>
+          <outputDirectory>${project.build.localRepository}</outputDirectory>
+          <message>${github.site.message}</message>
+          <noJekyll>true</noJekyll>
+        </configuration>
+        <executions>
+          <execution>
+            <goals><goal>site</goal></goals>
+            <phase>deploy</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
